@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			*{padding:0;margin:0;}
+			.fl{
+				float: left;
+			}
+			.fr{
+				float: right;
+			}
+			.clf::after{
+				clear: both;
+				height: 0;
+				display: block;
+				visibility: hidden;
+				content: ".";
+			}
+			.clf{
+				zoom: 1;
+			}
+			canvas{
+				background: cyan;
+				cursor: pointer;
+			}
+			.message{
+				float: left;
+				position: relative;
+				/*top: 0;*/
+			}
+			.message p{
+				width: 300px;
+				font-size: 20px;
+				color: green;
+				word-spacing: 5px;
+				position: absolute;
+				left: 252px;
+				top: 0;
+
+			}
+			#controls{
+				width: 300px;
+				height: 150px;
+				background: rgba(0,0,0,0.6);
+				
+				position: absolute;
+				left: 150px;
+				top: 100px;
+				z-index: -1;
+				/*display: none;*/
+			}
+			#controls button{
+				width: 80px;
+				height: 30px;
+				background: rgba(0,0,255,0.3);
+				cursor: pointer;
+				color: #fff;
+				border: none;
+				margin: 2px 10px;
+
+			}
+			#controls p{
+
+				float: left;
+				width: 100%;
+				height: 50px;
+				font-size: 30px;
+				text-align: center;
+				line-height: 50px;
+				color: red;
+				margin-bottom: 20px;
+			}
+
+		</style>
+		<meta charset="utf-8" />
+		<title>五子棋</title>
+	</head>
+	<body >
+	<!-- onload="drawRect()" -->
+		 <!-- onmousedown="play(event) -->
+		<canvas id="canvas" width="700" height="700"">
+			你的浏览器不支持HTML5的Canvas控件,请使用谷歌浏览器打开
+		</canvas>
+		
+
+
+		<div class="message">
+			<p class="msg1">黑棋先手!</p>
+		</div>
+		<div id="controls"class="clf">
+				<p><span>恭喜：</span></p>
+				<button class="fl">再来一局</button>
+				<button class="fr">不了，再见</button>
+		</div>
+	</body>
+
+
+
+<script type="text/javascript">
+	//获得画布
+	var canvas = document.getElementById("canvas");
+	//设置参数 
+	var ctx = canvas.getContext("2d");
+	
+	//页面加载后先画出棋盘，并且给画布 canvas 添加 监听事件
+	window.onload=drawRect();
+	canvas.addEventListener('click',play);
+
+//		控制按钮
+	var controls=document.getElementById('controls');
+	<!-- console.log(controls) -->
+	var conP=controls.getElementsByTagName('p')[0];
+	console.log(conP)
+	var btn=controls.getElementsByTagName('button');
+
+	btn[0].addEventListener('click',reNew);
+	btn[1].addEventListener('click',colses);
+
+	
+	function reNew(e){
+		var e=e||window.event;
+		 console.log(location);
+		location.reload();
+	}
+
+	function colses(e){
+		var e=e||window.event;
+		<!-- console.log(window) -->
+		window.close();
+	}
+
+	//提示信息
+	var msg1= document.querySelector(".msg1");
+
+	function msg(){
+		if(isWhite){
+			msg1.innerHTML="请白棋落子…";
+		}else{
+			msg1.innerHTML="请黑棋落子…";
+		}
+	}
+	//1.棋盘15*15 40,40--  600 ,40;40,80--600,80
+	
+	//画棋盘
+	function drawRect(){
+		//循环操作
+		for(var i=40;i<=600;i=i+40){
+			drawLine(40,i,600,i);//水平线
+			drawLine(i,40,i,600);//画垂直线
+		}
+			
+	}
+	
+	//画线方法
+	function drawLine(x1,y1,x2,y2){
+		
+		ctx.beginPath();
+		ctx.moveTo(x1,y1);
+		ctx.lineTo(x2,y2);
+		ctx.closePath();
+		ctx.stroke();
+		
+	}
+	
+	
+	//2.加载棋子 
+	var img_b = new Image();//黑棋
+	img_b.src="img/b.png";
+	var img_w = new Image();
+	img_w.src="img/w.png";
+	//加载白棋
+	function drawWhite(x,y){
+		// console.log(x,y)
+		//必须在棋盘内下棋
+		if(x>=40&&x<=600&&y>=40&&y<=600){
+			//只能在交点处下棋
+			var index_x = Math.round(x/40);
+			var index_y = Math.round(y/40);
+			// console.log(index_x,index_y)
+			x = index_x*40;
+			y = index_y*40;
+			
+			//记录该位置已下棋
+			if(isPlay(index_x,index_y)){
+				ctx.drawImage(img_w,x-20,y-20);
+				chessData[index_x][index_y]=2;
+				//判断是输赢
+				if(isWin(index_x,index_y)){
+					alert("白棋胜");
+					canvas.removeEventListener('click',play);
+					conP.innerHTML+="白棋胜利！！！";
+					controls.style.zIndex="1000";
+					isWhite = false;
+					msg1.innerHTML="";
+					<!-- msg(); -->
+					return;
+				}
+				
+				isWhite = false;
+				msg();
+			}else{
+				alert("你不能在此位置下棋");
+			}
+		}
+		
+	}
+	//加载黑棋
+	function drawBlack(x,y){
+		// console.log(x,y)
+		//只能在棋盘内
+		if(x>=30&&x<=610&&y>=30&&y<=610){
+			//只能在交点处下棋
+			var index_x = Math.round(x/40);
+			var index_y = Math.round(y/40);
+			// console.log(index_x,index_y)
+			x = index_x*40;
+			y = index_y*40;
+			// console.log(x,y)
+			
+			//记录该位置已下棋
+			if(isPlay(index_x,index_y)){
+				ctx.drawImage(img_b,x-20,y-20);
+				chessData[index_x][index_y]=1;
+				//判断是输赢
+				if(isWin(index_x,index_y)){
+					alert("黑棋胜");
+					canvas.removeEventListener('click',play);
+					conP.innerHTML+="黑棋胜利！！！";
+					controls.style.zIndex="1000";
+					isWhite = true;
+					msg1.innerHTML="";
+					<!-- msg(); -->
+					return;
+				}
+				isWhite = true;
+				msg();
+			}else{
+				alert("你不能在此位置下棋");
+			}
+		}
+	}
+	//3开始下棋
+	//怎么获得鼠标点击时的位置??
+	function play(e){
+		var e=e||window.event;
+		var mouseX = e.clientX;//鼠标点击时x轴坐标
+		var mouseY = e.clientY;//鼠标点击时y轴坐标
+		
+		trunPlay(mouseX,mouseY);//交替下棋
+	}
+	
+	//4交替下棋.黑棋先行
+	var isWhite = false;//是否该白棋落子
+	function trunPlay(mouseX,mouseY){
+		//if...else条件控制语句
+		if(isWhite){
+			drawWhite(mouseX,mouseY);
+		}else {
+			drawBlack(mouseX,mouseY);	
+		}
+		
+	}
+	
+	//5.约束下棋:a.只能在棋盘内,b.只能在交点处下棋,c.不能重复下棋
+	//不能重复下棋,创建二维数组来存在下棋坐标,0表示该坐标没有棋子,1已下黑棋,2,已下白棋
+	var chessData = new Array();
+	for(var i=0;i<16;i++){
+		chessData[i] = new Array();
+		for(var j=0;j<16;j++){
+			chessData[i][j] = 0;//该位置未下棋
+		}
+	}
+	
+	function isPlay(index_x,index_y){
+		
+		var isplay = chessData[index_x][index_y];
+		
+		return isplay==0;
+	}
+	
+	//6判断输赢:水平,垂直,左上右下,右上左下,每次落子都要判断
+	var flag = false;//是否赢了?
+	function isWin(x,y){
+		
+		//左上右下
+		if(upLt_downGt(x,y)){
+			flag = true;
+			return flag;
+		}
+		
+		//右上左下
+		if(upGt_downLt(x,y)){
+			flag = true;
+			return flag;
+		}
+		//水平
+		if(horizontal(x,y)){
+			flag = true;
+			return flag;
+		}
+		
+		//垂直
+		if(vertical(x,y)){
+			flag = true;
+			return flag;
+		}
+		
+	}
+	//左上右下
+	function upLt_downGt(index_x,index_y){
+		//当前落子往左上找,当下落子往右下找,两者加和为5即胜
+		var chessNow = chessData[index_x][index_y];
+		// console.log(index_x,index_y)
+		var count = 0;
+		for(var i=index_x,j=index_y;i>0,j>0;i--,j--){//左上
+
+			// console.log(i,j)
+			if(chessData[i][j]!=chessNow){
+				// console.log(i,j)
+				break;
+			}
+			count++;
+		}
+		for(var i = index_x+1,j=index_y+1;i<16,j<16;i++,j++){//右下 
+			if(i>=16||j>=16){
+				break;
+			}
+		
+			if(chessData[i][j]!=chessNow){
+				// console.log(i,j)
+				break;
+			}
+			count++;
+		}
+		
+		if(count>=5){
+			return true;
+		}else{
+			return false;
+		}
+
+	}
+	//右上左下
+	function upGt_downLt(index_x,index_y){
+		//当前落子往右上找,当下落子往左下找,两者加和为5即胜
+		var chessNow = chessData[index_x][index_y];
+		var count = 0;
+		for(var i=index_x,j=index_y;i<16,j>0;i++,j--){//右上
+			if(i>=16||j>=16){
+				break;
+			}
+			if(chessData[i][j]!=chessNow){
+				break;
+			}
+			count++;
+		}
+		for(var i = index_x-1,j=index_y+1;i>0,j<16;i--,j++){//左下
+			if(i>=16||j>=16){
+				break;
+			}
+			if(chessData[i][j]!=chessNow){
+				break;
+			}
+			count++;
+		}
+		
+		if(count>=5){
+			return true;
+		}else{
+			return false;
+		}
+
+	}
+	
+	//水平
+	function horizontal(index_x,index_y){
+		//当前落子往左找,当下落子往右找,两者加和为5即胜
+		var chessNow = chessData[index_x][index_y];
+		var count = 0;
+		for(var i=index_x;i>0;i--){
+			if(chessData[i][index_y]!=chessNow){
+				break;
+			}
+			count++;
+
+		}
+		for(var i = index_x+1;i<16;i++){
+			if(i>=16){
+				break;
+			}
+			if(chessData[i][index_y]!=chessNow){
+				break;
+			}
+			count++;
+			
+		}
+		
+		if(count>=5){
+			return true;
+		}else{
+			return false;
+		}
+
+	}
+	
+
+
+
+	////垂直
+	///
+	function vertical(index_x,index_y){
+		//当前落子往上找,当下落子往下找,两者加和为5即胜
+		var chessNow = chessData[index_x][index_y];
+		var count = 0;
+		for(var j=index_y;j>0;j--){
+			if(chessData[index_x][j]!=chessNow){
+				break;
+			}
+			count++;
+			
+		}
+		for(var j = index_y+1;j<16;j++){
+			if(j>=16){
+				break;
+			}
+			if(chessData[index_x][j]!=chessNow){
+				break;
+			}
+			count++;
+			
+		}
+		
+		if(count>=5){
+			return true;
+		}else{
+			return false;
+		}
+
+	}
+	
+</script>
+
+
+
+</html>
